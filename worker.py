@@ -9,7 +9,7 @@ class WorkerResult:
         self.image = image
 
 class Worker(threading.Thread):
-    def __init__(self, task_queue, result_queue, app, id):
+    def __init__(self, id, task_queue, working_map, result_queue, app):
         super(Worker, self).__init__()
         self.id = id
         self.app_context = app.app_context()
@@ -17,6 +17,7 @@ class Worker(threading.Thread):
         self.qr_code_gen = QRCodeAIGenerator()
         self.task_queue = task_queue
         self.is_running = True
+        self.working_map = working_map
 
     def stop_worker(self):
         with self.worker_lock:
@@ -27,6 +28,7 @@ class Worker(threading.Thread):
             current_app.logger.debug(f"Worker started, id: {self.id}")
         while True:
             task = self.task_queue.get()
+            self.working_map.add(task.id, True)
             with self.worker_lock:
                 if not self.is_running:
                     break
@@ -38,5 +40,6 @@ class Worker(threading.Thread):
                                                          task.strength)
 
             self.result_queue.add(WorkerResult(task.id, image))
+            self.working_map.erase(task.id)
         with self.app_context:
             current_app.logger.debug(f"Worker stopped, id: {self.id}")
