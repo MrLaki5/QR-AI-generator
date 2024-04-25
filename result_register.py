@@ -1,5 +1,6 @@
 import threading
 from worker import WorkerResult
+from flask import current_app
 from map_safe import MapSafe
 
 
@@ -10,7 +11,7 @@ class RegisterData:
 
 
 class ResultRegister(threading.Thread):
-    def __init__(self, result_queue, working_map, cleanup_interval_s=300, app):
+    def __init__(self, result_queue, working_map, cleanup_interval_s, app):
         super(ResultRegister, self).__init__()
         self.app_context = app.app_context()
         self.result_queue = result_queue
@@ -26,7 +27,7 @@ class ResultRegister(threading.Thread):
 
     def run(self):
         with self.app_context:
-            current_app.logger.debug(f"Result Register started")
+            current_app.logger.info(f"Result Register started")
         while True:
             result = self.result_queue.get()
             with self.worker_lock:
@@ -37,7 +38,7 @@ class ResultRegister(threading.Thread):
             self.register.cleanup(lambda x: int(time.time()) - x.timestamp > cleanup_interval_s)
 
         with self.app_context:
-            current_app.logger.debug(f"Result Register stopped")
+            current_app.logger.info(f"Result Register stopped")
 
     def get_result(self, id):
         still_working = self.working_map.get(id)

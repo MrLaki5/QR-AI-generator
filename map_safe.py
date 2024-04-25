@@ -1,4 +1,4 @@
-import threading.Lock
+from threading import Lock
 
 class MapSafe:
     def __init__(self):

@@ -1,4 +1,4 @@
-from queue import Queue
+from queue_safe import QueueSafe
 from worker import Worker
 from task import Task
 from result_register import ResultRegister
@@ -6,11 +6,11 @@ from map_safe import MapSafe
 
 
 class WorkersPool:
-    def __init__(self, workers_count: int, queue_size: int, cleanup_interval_s: int = 300, app):
+    def __init__(self, workers_count: int, queue_size: int, cleanup_interval_s: int, app):
         self.workers = []
         self.working_map = MapSafe()
-        self.task_queue = Queue(queue_size)
-        self.result_queue = Queue(queue_size)
+        self.task_queue = QueueSafe(queue_size)
+        self.result_queue = QueueSafe(queue_size)
 
         self.result_register = ResultRegister(self.result_queue, self.working_map, cleanup_interval_s, app)
         for i in range(workers_count):

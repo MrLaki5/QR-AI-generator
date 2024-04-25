@@ -1,6 +1,6 @@
 import threading
 
-class Queue:
+class QueueSafe:
     def __init__(self, max_size=10):
         self.queue = []
         self.max_size = max_size

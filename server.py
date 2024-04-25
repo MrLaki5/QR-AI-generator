@@ -1,11 +1,21 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, send_file
 from workers_pool import WorkersPool
 from task import Task
+import logging
+import atexit
+
+
+logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
 workers_pool = WorkersPool(workers_count=1, queue_size=10, cleanup_interval_s=300, app=app)
 workers_pool.start_workers()
+
+
+def shutdown():
+    workers_pool.stop_workers()
+atexit.register(shutdown)
 
 
 @app.route("/")
@@ -15,12 +25,12 @@ def index():
 
 @app.route("/generate", methods=['POST'])
 def generate():
-    task = Task(qr_content = request.form['qr_content']
-                prompt = request.form['prompt']
-                guidance_scale = request.form['guidance_scale']
-                controlnet_conditioning_scale = request.form['controlnet_conditioning_scale']
-                strength = request.form['strength']
-                init_image = request.files['init_image'])
+    task = Task(qr_content=request.form['qr_content'],
+                prompt=request.form['prompt'],
+                guidance_scale=request.form['guidance_scale'],
+                controlnet_conditioning_scale=request.form['controlnet_conditioning_scale'],
+                strength=request.form['strength'],
+                init_image=request.files['init_image'])
 
     task_id = task.id
     add_result_status = workers_pool.add_task()
@@ -44,4 +54,4 @@ def result(task_id):
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8089)
+    app.run(debug=False, host='0.0.0.0', port=8089)

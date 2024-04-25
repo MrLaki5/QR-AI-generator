@@ -25,13 +25,13 @@ class Worker(threading.Thread):
 
     def run(self):
         with self.app_context:
-            current_app.logger.debug(f"Worker started, id: {self.id}")
+            current_app.logger.info(f"Worker started, id: {self.id}")
         while True:
             task = self.task_queue.get()
-            self.working_map.add(task.id, True)
             with self.worker_lock:
                 if not self.is_running:
                     break
+            self.working_map.add(task.id, True)
             image = self.qr_code_gen.generate_ai_qr_code(task.qr_content, 
                                                          task.init_image, 
                                                          task.prompt, 
@@ -42,4 +42,4 @@ class Worker(threading.Thread):
             self.result_queue.add(WorkerResult(task.id, image))
             self.working_map.erase(task.id)
         with self.app_context:
-            current_app.logger.debug(f"Worker stopped, id: {self.id}")
+            current_app.logger.info(f"Worker stopped, id: {self.id}")
