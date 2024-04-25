@@ -2,6 +2,7 @@ import threading
 from worker import WorkerResult
 from flask import current_app
 from map_safe import MapSafe
+import time
 
 
 class RegisterData:
@@ -35,7 +36,7 @@ class ResultRegister(threading.Thread):
                     break
             
             self.register.add(result.id, RegisterData(result))
-            self.register.cleanup(lambda x: int(time.time()) - x.timestamp > cleanup_interval_s)
+            self.register.cleanup(lambda x: int(time.time()) - x.timestamp > self.cleanup_interval_s)
 
         with self.app_context:
             current_app.logger.info(f"Result Register stopped")

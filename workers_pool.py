@@ -37,5 +37,5 @@ class WorkersPool:
     def add_task(self, task: Task):
         return self.task_queue.add(task)
 
-    def get_result(self):
-        return self.result_queue.get()
+    def get_result(self, id):
+        return self.result_register.get_result(id)

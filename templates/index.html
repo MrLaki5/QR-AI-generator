@@ -6,9 +6,19 @@
 <body>
     <div class="container">
         <h1>QR AI Generator</h1>
-        <form method="post">
-            <label for="text">Text:</label>
-            <input type="text" name="text" id="text" required>
+        <form method="post" action="/generate" enctype="multipart/form-data">
+            <label for="qr_content">QR Content: </label>
+            <input type="text" name="qr_content" id="qr_content" required>
+            <label for="prompt">Prompt: </label>
+            <input type="text" name="prompt" id="prompt" required>
+            <label for="guidance_scale">Guidance Scale: </label>
+            <input type="number" name="guidance_scale" id="guidance_scale" required>
+            <label for="controlnet_conditioning_scale">Controlnet Conditioning Scale: </label>
+            <input type="number" name="controlnet_conditioning_scale" id="controlnet_conditioning_scale" required>
+            <label for="strength">Strength: </label>
+            <input type="number" name="strength" id="strength" required>
+            <label for="init_image">Initial Image: </label>
+            <input type="file" name="init_image" id="init_image" required>
             <button type="submit">Generate</button>
         </form>
     </div>

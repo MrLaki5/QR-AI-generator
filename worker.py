@@ -16,6 +16,7 @@ class Worker(threading.Thread):
         self.worker_lock = threading.Lock()
         self.qr_code_gen = QRCodeAIGenerator()
         self.task_queue = task_queue
+        self.result_queue = result_queue
         self.is_running = True
         self.working_map = working_map
 
@@ -40,6 +41,6 @@ class Worker(threading.Thread):
                                                          task.strength)
 
             self.result_queue.add(WorkerResult(task.id, image))
-            self.working_map.erase(task.id)
+            self.working_map.remove(task.id)
         with self.app_context:
             current_app.logger.info(f"Worker stopped, id: {self.id}")

@@ -10,7 +10,7 @@ class Task:
         self.guidance_scale = guidance_scale
         self.controlnet_conditioning_scale = controlnet_conditioning_scale
         self.strength = strength
-        self.id = uuid.uuid4()
+        self.id = str(uuid.uuid4())
 
     def __str__(self):
         return f"Task: {self.id}, {self.qr_content}, {self.prompt}, {self.guidance_scale}, {self.controlnet_conditioning_scale}, {self.strength}"
