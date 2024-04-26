@@ -49,7 +49,10 @@ class ResultHandler(threading.Thread):
                     self.socket_handler.emit(socket_id, "status", {"queue_position": queue_position})
 
             # Emit results to connected socket
-            self.socket_handler.emit(result.socket_id, "result", {"image": self._image_to_base64(result.image)})          
+            if result.image is not None:
+                self.socket_handler.emit(result.socket_id, "result", {"image": self._image_to_base64(result.image)})
+            else:
+                self.socket_handler.emit(result.socket_id, "status", {"queue_position": 0})
 
         with self.app_context:
             current_app.logger.info(f"Result Handler stopped")

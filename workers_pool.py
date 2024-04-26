@@ -23,7 +23,8 @@ class WorkersPool:
         for i in range(workers_count):
             self.workers.append(Worker(id=i,
                                        task_queue=self.task_queue, 
-                                       result_queue=self.result_queue, 
+                                       result_queue=self.result_queue,
+                                       connected_sockets=self.connected_sockets,
                                        app=app))
 
     def start_workers(self):

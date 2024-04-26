@@ -9,7 +9,7 @@ class WorkerResult:
         self.image = image
 
 class Worker(threading.Thread):
-    def __init__(self, id, task_queue, result_queue, app):
+    def __init__(self, id, task_queue, result_queue, connected_sockets, app):
         super(Worker, self).__init__()
         self.id = id
         self.app_context = app.app_context()
@@ -18,6 +18,7 @@ class Worker(threading.Thread):
         self.task_queue = task_queue
         self.result_queue = result_queue
         self.is_running = True
+        self.connected_sockets = connected_sockets
 
     def stop_worker(self):
         with self.worker_lock:
@@ -31,6 +32,13 @@ class Worker(threading.Thread):
             with self.worker_lock:
                 if not self.is_running:
                     break
+            # This will trigger result handler to know which sockets task is currently processing
+            self.result_queue.add(WorkerResult(task.socket_id, None))
+
+            if not self.connected_sockets.get(task.socket_id):
+                with self.app_context:
+                    current_app.logger.info(f"Socket {task.socket_id} disconnected, task removed")
+                continue
 
             image = self.qr_code_gen.generate_ai_qr_code(task.qr_content, 
                                                          task.init_image, 
