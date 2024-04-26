@@ -2,11 +2,58 @@
 <head>
     <title>QR AI Generator</title>
     <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        document.addEventListener('DOMContentLoaded', function () {
+            var socket = io();
+
+            socket.on('status', function(data) {
+                console.log('response: ' + JSON.stringify(data, null, 2));
+                if (data.queue_position !== undefined) {
+                    document.getElementById('queue').innerText = 'Queue position: ' + data.queue_position;
+                }
+            });
+
+            socket.on('result', function(data) {
+                var img = document.createElement('img');
+                img.src = 'data:image/png;base64,' + data.image;
+                document.body.appendChild(img);  // Add image to the page
+                document.getElementById('queue').innerText = "";
+            });
+
+            document.getElementById('generate_form').addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const qr_content = document.getElementById('qr_content').value;
+                const prompt = document.getElementById('prompt').value;
+                const guidance_scale = document.getElementById('guidance_scale').value;
+                const controlnet_conditioning_scale = document.getElementById('controlnet_conditioning_scale').value;
+                const strength = document.getElementById('strength').value;
+                const init_image = document.getElementById('init_image');
+                const reader = new FileReader();
+
+                reader.onload = function(event) {
+                    const img_data = event.target.result;
+                    socket.emit('generate_ws', {
+                        qr_content: qr_content,
+                        prompt: prompt,
+                        guidance_scale: guidance_scale,
+                        controlnet_conditioning_scale: controlnet_conditioning_scale,
+                        strength: strength,
+                        init_image: img_data
+                    });
+                };
+
+                // Read the file as a Data URL (base64)
+                reader.readAsDataURL(init_image.files[0]);
+            });
+        });
+    </script>
 </head>
 <body>
     <div class="container">
         <h1>QR AI Generator</h1>
-        <form method="post" action="/generate" enctype="multipart/form-data">
+        <form id="generate_form">
             <label for="qr_content">QR Content: </label>
             <input type="text" name="qr_content" id="qr_content" required>
             <label for="prompt">Prompt: </label>
@@ -21,5 +68,8 @@
             <input type="file" name="init_image" id="init_image" required>
             <button type="submit">Generate</button>
         </form>
+        <div>
+            <h2 id="queue"></h2>
+        </div>
     </div>
 </html>

@@ -8,11 +8,11 @@ class QueueSafe:
 
     def add(self, data):
         with self.condition:
-            if len(self.queue) < self.max_size:
+            if len(self.queue) < self.max_size or self.max_size == -1:
                 self.queue.append(data)
                 self.condition.notify()
-                return True
-            return False
+                return len(self.queue)
+            return -1
 
     def get(self):
         with self.condition:
@@ -20,6 +20,19 @@ class QueueSafe:
                 self.condition.wait()
             data = self.queue.pop(0)
             return data
+
+    def get_meta_lambda(self, lambda_func):
+        with self.condition:
+            return_list = []
+            for data in self.queue:
+                return_list.append(lambda_func(data))
+            return return_list
+
+    def remove_meta_lambda(self, lambda_func):
+        with self.condition:
+            for data in self.queue:
+                if lambda_func(data):
+                    self.queue.remove(data)
 
     def get_queue_size(self):
         with self.condition:
