@@ -1,75 +1,228 @@
-<html>
-<head>
-    <title>QR AI Generator</title>
-    <link rel="stylesheet" type="text/css" href="style.css">
-    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>QR-AI Generator</title>
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+
+    <link rel="stylesheet" href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css"/>
+
+    <style>
+      .fade-border {
+        -webkit-mask-image: radial-gradient(circle, white 40%, transparent 100%);
+        mask-image: radial-gradient(circle, white 40%, transparent 100%);
+      }
+    </style>
+
     <script type="text/javascript" charset="utf-8">
-        document.addEventListener('DOMContentLoaded', function () {
-            var socket = io();
+      var guidance_scale_value = 15;
+      var controlnet_conditioning_scale_value = 1.5;
 
-            socket.on('status', function(data) {
-                console.log('response: ' + JSON.stringify(data, null, 2));
-                if (data.queue_position !== undefined) {
-                    document.getElementById('queue').innerText = 'Queue position: ' + data.queue_position;
-                }
-            });
+      function show_file_name() {
+        var input = document.getElementById('file_input');
+        var fileNameDiv = document.getElementById('file_name');
+        fileNameDiv.textContent = input.files.length > 0 ? input.files[0].name : 'No file chosen';
+      }
 
-            socket.on('result', function(data) {
-                var img = document.createElement('img');
-                img.src = 'data:image/png;base64,' + data.image;
-                document.body.appendChild(img);  // Add image to the page
-                document.getElementById('queue').innerText = "";
-            });
+      document.addEventListener('DOMContentLoaded', function() {
+        const file_button = document.getElementById('file_button');
+        const file_input = document.getElementById('file_input');
 
-            document.getElementById('generate_form').addEventListener('submit', function(e) {
-                e.preventDefault();
+        const slider = document.getElementById('guidance_scale');
+        const valueDisplay = document.getElementById('guidance_scale_value');
+        valueDisplay.textContent = "Guidance scale: " + guidance_scale_value;
 
-                const qr_content = document.getElementById('qr_content').value;
-                const prompt = document.getElementById('prompt').value;
-                const guidance_scale = document.getElementById('guidance_scale').value;
-                const controlnet_conditioning_scale = document.getElementById('controlnet_conditioning_scale').value;
-                const strength = document.getElementById('strength').value;
-                const init_image = document.getElementById('init_image');
-                const reader = new FileReader();
+        const controlnet_slider = document.getElementById('controlnet_conditioning_scale');
+        const controlnet_valueDisplay = document.getElementById('controlnet_conditioning_scale_value');
+        controlnet_valueDisplay.textContent = "Controlnet Conditioning Scale: " + controlnet_conditioning_scale_value;
 
-                reader.onload = function(event) {
-                    const img_data = event.target.result;
-                    socket.emit('generate_ws', {
-                        qr_content: qr_content,
-                        prompt: prompt,
-                        guidance_scale: guidance_scale,
-                        controlnet_conditioning_scale: controlnet_conditioning_scale,
-                        strength: strength,
-                        init_image: img_data
-                    });
-                };
+        const strength_slider = document.getElementById('strength');
+        const strength_valueDisplay = document.getElementById('strength_value');
+        strength_valueDisplay.textContent = "Strength: " + strength_slider.value;
 
-                // Read the file as a Data URL (base64)
-                reader.readAsDataURL(init_image.files[0]);
-            });
+        slider.addEventListener('input', function() {
+          guidance_scale_value = slider.value;
+          valueDisplay.textContent = "Guidance scale: " + guidance_scale_value;
         });
+
+        controlnet_slider.addEventListener('input', function() {
+          controlnet_conditioning_scale_value = controlnet_slider.value;
+          controlnet_valueDisplay.textContent = "Controlnet Conditioning Scale: " + controlnet_conditioning_scale_value;
+        });
+
+        strength_slider.addEventListener('input', function() {
+          strength_valueDisplay.textContent = "Strength: " + strength_slider.value;
+        });
+
+        file_button.addEventListener('click', function() {
+          file_input.click();
+        });
+      });
     </script>
-</head>
-<body>
-    <div class="container">
-        <h1>QR AI Generator</h1>
-        <form id="generate_form">
-            <label for="qr_content">QR Content: </label>
-            <input type="text" name="qr_content" id="qr_content" required>
-            <label for="prompt">Prompt: </label>
-            <input type="text" name="prompt" id="prompt" required>
-            <label for="guidance_scale">Guidance Scale: </label>
-            <input type="number" name="guidance_scale" id="guidance_scale" required>
-            <label for="controlnet_conditioning_scale">Controlnet Conditioning Scale: </label>
-            <input type="number" name="controlnet_conditioning_scale" id="controlnet_conditioning_scale" required>
-            <label for="strength">Strength: </label>
-            <input type="number" name="strength" id="strength" required>
-            <label for="init_image">Initial Image: </label>
-            <input type="file" name="init_image" id="init_image" required>
-            <button type="submit">Generate</button>
-        </form>
-        <div>
-            <h2 id="queue"></h2>
+  </head>
+
+  <body class="leading-normal tracking-normal text-indigo-400 m-6 bg-cover bg-fixed" 
+        style="background-image: url('{{ url_for('static', filename='images/header.png') }}');">
+    <div class="h-full">
+      <!--Nav-->
+      <div class="w-full container mx-auto">
+        <div class="w-full flex items-center justify-between">
+          <a class="flex items-center text-indigo-400 no-underline 
+                    hover:no-underline font-bold text-2xl lg:text-4xl" href="">
+            QR-<span class="bg-clip-text text-transparent bg-gradient-to-r 
+                            from-green-400 via-pink-500 to-purple-500"> AI Generator</span>
+          </a>
+
+          <div class="flex w-1/2 justify-end content-center">
+            <a class="inline-block text-blue-300 no-underline 
+                      hover:text-pink-500 hover:text-underline 
+                      text-center h-10 p-2 md:h-auto md:p-4 
+                      transform hover:scale-125 duration-300 ease-in-out" 
+                href="https://github.com/MrLaki5/QR-AI-generator">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" 
+                     viewBox="0 0 24 24" class="fill-current">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+              </svg>
+            </a>
+
+          </div>
         </div>
+      </div>
+
+      <!--Main-->
+      <div class="container pt-24 md:pt-34 mx-auto 
+                  flex flex-wrap flex-col md:flex-row items-center">
+        <!--Left Col-->
+        <div class="flex flex-col w-full xl:w-2/5 
+                    justify-center lg:items-start overflow-y-hidden">
+          <p class="leading-normal text-base 
+                    md:text-2xl mb-8 text-center md:text-left">
+            Transform ordinary QR codes into engaging 
+            visual experiences with AI technology.
+          </p>
+
+          <form class="bg-gray-900 opacity-75 w-full 
+                       shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4">
+            <div class="mb-4">
+              <!-- QR code Content -->
+              <label class="block text-blue-300 py-2 font-bold mb-2" for="qr_content">
+                QR Code Content
+              </label>
+              <input
+                class="shadow appearance-none border 
+                       rounded w-full p-3 text-gray-700 
+                       leading-tight focus:ring transform 
+                       transition duration-300 ease-in-out"
+                id="qr_content"
+                type="text"
+                placeholder="eg. URL, text"
+                required
+              />
+
+              <!-- Prompt -->
+              <label class="block text-blue-300 py-2 font-bold mb-2" for="prompt">
+                Prompt
+              </label>
+              <input
+                class="shadow appearance-none border 
+                       rounded w-full p-3 text-gray-700 
+                       leading-tight focus:ring transform 
+                       transition duration-300 ease-in-out"
+                id="prompt"
+                type="text"
+                placeholder="nature, mountains, hd, picture"
+                required
+              />
+
+              <!-- Quidance scale -->
+              <label class="block text-blue-300 py-2 font-bold mb-2" 
+                     for="guidance_scale"
+                     id="guidance_scale_value">
+                Guidance Scale
+              </label>
+              <input id="guidance_scale" 
+                     type="range"
+                     min="5"
+                     max="25"
+                     value=15
+                     class="block w-full text-gray-700 
+                            bg-white border border-gray-300 rounded-md">
+
+              <!-- Controlnet conitioning scale -->
+              <label class="block text-blue-300 py-2 font-bold mb-2" 
+                      for="controlnet_conditioning_scale"
+                      id="controlnet_conditioning_scale_value">
+                Controlnet Conditioning Scale
+              </label>
+              <input id="controlnet_conditioning_scale" 
+                    type="range"
+                    min="0.5"
+                    max="2.5"
+                    step="0.1"
+                    value=1.5
+                    class="block w-full text-gray-700 
+                            bg-white border border-gray-300 rounded-md">
+
+              <!-- Strength -->
+              <label class="block text-blue-300 py-2 font-bold mb-2" 
+                      for="strength"
+                      id="strength_value">
+                Strength
+              </label>
+              <input id="strength" 
+                    type="range"
+                    min="0.5"
+                    max="2.5"
+                    step="0.1"
+                    value=1.5
+                    class="block w-full text-gray-700 
+                            bg-white border border-gray-300 rounded-md">
+
+              <!-- Image -->
+              <label class="block text-blue-300 py-2 font-bold mb-2" 
+                      for="file_button">
+                Initial Image
+              </label>
+              <button id="file_button" class="bg-transparent border border-blue-500 
+                                              text-blue-500 font-bold py-1 px-1 rounded 
+                                              focus:outline-none focus:shadow-outline 
+                                              transition-colors duration-300" type="button">
+                Choose File
+              </button>
+              <input type="file" id="file_input" style="display: none;" onchange="show_file_name()">
+              <span id="file_name" class="mt-2 text-gray-700">No file chosen</span>
+
+            </div>
+
+            <!-- Generate Button -->
+            <div class="flex items-center justify-between pt-4">
+              <button
+                class="bg-gradient-to-r from-purple-800 to-green-500 
+                       hover:from-pink-500 hover:to-green-500 text-white 
+                       font-bold py-2 px-4 rounded focus:ring transform 
+                       transition hover:scale-105 duration-300 ease-in-out"
+                type="button">
+                Generate
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!--Right Col-->
+        <div class="w-full xl:w-3/5 p-12 overflow-hidden flex justify-center items-center">
+          <img class="fade-border mx-auto w-2/5 transform -rotate-6" src="/static/images/grass-qr.png" />
+          <img class="fade-border mx-auto w-2/5 transform rotate-6" src="/static/images/crypto-qr.png" />
+        </div>
+
+        <!--Footer-->
+        <div class="w-full pt-16 pb-6 text-sm text-center md:text-left fade-in">
+          <a class="text-gray-500 no-underline hover:no-underline" href="#">&copy; App 2024</a>
+          - MrLaki5
+        </div>
+      </div>
     </div>
+  </body>
 </html>
