@@ -15,11 +15,75 @@
         -webkit-mask-image: radial-gradient(circle, white 40%, transparent 100%);
         mask-image: radial-gradient(circle, white 40%, transparent 100%);
       }
+
+      .loader {
+          position: relative;
+          width: 15vw;
+          height: 15vw;
+          border-radius: 50%;
+          background: linear-gradient(#f07e6e, #84cdfa, #5ad1cd);
+          animation: animate 1.2s linear infinite;
+      }
+
+      @keyframes animate {
+          0% {
+              transform: rotate(0deg);
+          }
+          100% {
+              transform: rotate(360deg);
+          }
+      }
+
+      .loader span {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          background: linear-gradient(#f07e6e, #84cdfa, #5ad1cd);
+      }
+
+      .loader span:nth-child(1) {
+          filter: blur(5px);
+      }
+
+      .loader span:nth-child(2) {
+          filter: blur(10px);
+      }
+
+      .loader span:nth-child(3) {
+          filter: blur(25px);
+      }
+
+      .loader span:nth-child(4) {
+          filter: blur(50px);
+      }
+
+      .loader:after {
+          content: '';
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          right: 10px;
+          bottom: 10px;
+          background: #1e1a2d;
+          border: solid #1e1a2d 10px;
+          border-radius: 50%;
+      }
+
+      /* Mobile size */
+      @media (max-width: 480px) {
+          .loader {
+              width: 40vw;
+              height: 40vw;
+          }
+      }
     </style>
 
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
     <script type="text/javascript" charset="utf-8">
       var guidance_scale_value = 15;
       var controlnet_conditioning_scale_value = 1.5;
+      var strength_value = 1.5;
 
       function show_file_name() {
         var input = document.getElementById('file_input');
@@ -27,7 +91,22 @@
         fileNameDiv.textContent = input.files.length > 0 ? input.files[0].name : 'No file chosen';
       }
 
+      function flip_forms(flip_queue) {
+        var generate_form = document.getElementById('generate_form');
+        var queue_form = document.getElementById('queue_form');
+
+        if (flip_queue) {
+          generate_form.classList.add('hidden');
+          queue_form.classList.remove('hidden');
+        } else {
+          generate_form.classList.remove('hidden');
+          queue_form.classList.add('hidden');
+        }
+      }
+
       document.addEventListener('DOMContentLoaded', function() {
+        var socket = io();
+
         const file_button = document.getElementById('file_button');
         const file_input = document.getElementById('file_input');
 
@@ -41,7 +120,7 @@
 
         const strength_slider = document.getElementById('strength');
         const strength_valueDisplay = document.getElementById('strength_value');
-        strength_valueDisplay.textContent = "Strength: " + strength_slider.value;
+        strength_valueDisplay.textContent = "Strength: " + strength_value;
 
         slider.addEventListener('input', function() {
           guidance_scale_value = slider.value;
@@ -54,11 +133,59 @@
         });
 
         strength_slider.addEventListener('input', function() {
-          strength_valueDisplay.textContent = "Strength: " + strength_slider.value;
+          strength_value = strength_slider.value;
+          strength_valueDisplay.textContent = "Strength: " + strength_value;
         });
 
         file_button.addEventListener('click', function() {
           file_input.click();
+        });
+
+        // Websocket functions
+        socket.on('status', function(data) {
+            console.log('response: ' + JSON.stringify(data, null, 2));
+            if (data.queue_position !== undefined) {
+                document.getElementById('generation_status').innerText = 'Queue position: ' + data.queue_position;
+            }
+        });
+
+        socket.on('result', function(data) {
+            var img = document.createElement('img');
+            img.src = 'data:image/png;base64,' + data.image;
+            document.body.appendChild(img);  // Add image to the page
+            document.getElementById('generation_status').innerText = "QR Code generated!";
+        });
+
+        document.getElementById('generate_form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const qr_content = document.getElementById('qr_content').value;
+            const prompt = document.getElementById('prompt').value;
+            const reader = new FileReader();
+
+            // Check if file is set
+            if (file_input.files.length === 0) {
+                document.getElementById('error_message').textContent = "Please choose initial image";
+                return;
+            }
+
+            reader.onload = function(event) {
+                const img_data = event.target.result;
+                socket.emit('generate_ws', {
+                    qr_content: qr_content,
+                    prompt: prompt,
+                    guidance_scale: guidance_scale_value,
+                    controlnet_conditioning_scale: controlnet_conditioning_scale_value,
+                    strength: strength_value,
+                    init_image: img_data
+                });
+
+                // Flip to queue form
+                flip_forms(true);
+            };
+
+            // Read the file as a Data URL (base64)
+            reader.readAsDataURL(file_input.files[0]);
         });
       });
     </script>
@@ -105,7 +232,8 @@
           </p>
 
           <form class="bg-gray-900 opacity-75 w-full 
-                       shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4">
+                       shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4"
+                       id="generate_form">
             <div class="mb-4">
               <!-- QR code Content -->
               <label class="block text-blue-300 py-2 font-bold mb-2" for="qr_content">
@@ -197,6 +325,11 @@
 
             </div>
 
+            <!-- Error message -->
+            <div class="mb-6 text-center">
+              <p class="text-red-500 text-xs italic" id="error_message"></p>
+            </div>
+
             <!-- Generate Button -->
             <div class="flex items-center justify-between pt-4">
               <button
@@ -204,11 +337,30 @@
                        hover:from-pink-500 hover:to-green-500 text-white 
                        font-bold py-2 px-4 rounded focus:ring transform 
                        transition hover:scale-105 duration-300 ease-in-out"
-                type="button">
+                type="submit">
                 Generate
               </button>
             </div>
           </form>
+
+          <!-- Queue form -->
+          <div class="bg-gray-900 opacity-75 w-full 
+                       shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4 hidden"
+               id="queue_form">
+            <div class="mb-4">
+              <label id="generation_status" class="block text-blue-300 py-2 font-bold mb-2"></label>
+              <!-- <img class="h-auto max-w-full rounded-lg opacity-25" src="/static/images/qr-placeholder.png" />-->
+              <div class="flex justify-center items-center max-w-full">
+                <div class="loader opacity-50">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div >
+              
+            </div>
+          </div>
         </div>
 
         <!--Right Col-->
