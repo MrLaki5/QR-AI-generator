@@ -14,7 +14,7 @@ import io
 logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SocketIO(app, max_http_buffer_size=5 * 1024 * 1024) # 5 MB
 connected_sockets = MapSafe()
 
 socket_handler = SocketHandler(app=app, 

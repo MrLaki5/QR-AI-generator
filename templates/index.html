@@ -145,7 +145,16 @@
         socket.on('status', function(data) {
             console.log('response: ' + JSON.stringify(data, null, 2));
             if (data.queue_position !== undefined) {
+              if (data.queue_position < 0) {
+                document.getElementById('error_message').textContent = "Server to busy, please try again later";
+                flip_forms(false);
+              }
+              else if (data.queue_position === 0) {
+                document.getElementById('generation_status').innerText = "Generating QR Code...";
+              }
+              else {
                 document.getElementById('generation_status').innerText = 'Queue position: ' + data.queue_position;
+              }
             }
         });
 
@@ -166,6 +175,12 @@
             // Check if file is set
             if (file_input.files.length === 0) {
                 document.getElementById('error_message').textContent = "Please choose initial image";
+                return;
+            }
+
+            // Check if file is larger then 5MB
+            if (file_input.files[0].size > 5 * 1024 * 1024) {
+                document.getElementById('error_message').textContent = "File is too large, max size is 5MB";
                 return;
             }
 
