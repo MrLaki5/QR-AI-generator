@@ -91,17 +91,76 @@
         fileNameDiv.textContent = input.files.length > 0 ? input.files[0].name : 'No file chosen';
       }
 
+      // Flip between forms: 0 - generate form, 1 - queue form, 2 - result form
       function flip_forms(flip_queue) {
         var generate_form = document.getElementById('generate_form');
         var queue_form = document.getElementById('queue_form');
+        var result_form = document.getElementById('result_form');
 
-        if (flip_queue) {
-          generate_form.classList.add('hidden');
-          queue_form.classList.remove('hidden');
-        } else {
+        if (flip_queue === 0) {
+          console.log('flip to generate');
           generate_form.classList.remove('hidden');
           queue_form.classList.add('hidden');
+          result_form.classList.add('hidden');
+        } else if (flip_queue === 1) {
+          console.log('flip to queue');
+          generate_form.classList.add('hidden');
+          queue_form.classList.remove('hidden');
+          result_form.classList.add('hidden');
         }
+        else {
+          console.log('flip to result');
+          generate_form.classList.add('hidden');
+          queue_form.classList.add('hidden');
+          result_form.classList.remove('hidden');
+        }
+      }
+
+      function back_to_generation() {
+        document.getElementById('error_message').textContent = "";
+        document.getElementById('generation_status').innerText = "";
+        flip_forms(0);
+      }
+
+      function base64toBlob(base64Data, contentType) {
+        contentType = contentType || '';
+        var sliceSize = 1024;
+        var byteCharacters = atob(base64Data);
+        var byteArrays = [];
+
+        for (var offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+          var slice = byteCharacters.slice(offset, offset + sliceSize);
+          var byteNumbers = new Array(slice.length);
+          for (var i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+          }
+          var byteArray = new Uint8Array(byteNumbers);
+          byteArrays.push(byteArray);
+        }
+
+        var blob = new Blob(byteArrays, { type: contentType });
+        return blob;
+      }
+
+      function download_image() {
+        // Get the image source data URI
+        var imageSrc = document.getElementById('result_image').src;
+
+        // Extract base64 data
+        var base64Data = imageSrc.split(',')[1];
+
+        // Convert base64 to binary
+        var blob = base64toBlob(imageSrc, 'image/png');
+
+        // Create a temporary anchor element
+        var downloadLink = document.createElement('a');
+        downloadLink.href = window.URL.createObjectURL(blob);
+        downloadLink.download = 'qr_code.png';
+
+        // Trigger the click event on the anchor element
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
       }
 
       document.addEventListener('DOMContentLoaded', function() {
@@ -147,7 +206,7 @@
             if (data.queue_position !== undefined) {
               if (data.queue_position < 0) {
                 document.getElementById('error_message').textContent = "Server to busy, please try again later";
-                flip_forms(false);
+                flip_forms(0);
               }
               else if (data.queue_position === 0) {
                 document.getElementById('generation_status').innerText = "Generating QR Code...";
@@ -159,10 +218,9 @@
         });
 
         socket.on('result', function(data) {
-            var img = document.createElement('img');
-            img.src = 'data:image/png;base64,' + data.image;
-            document.body.appendChild(img);  // Add image to the page
-            document.getElementById('generation_status').innerText = "QR Code generated!";
+          document.getElementById('result_image').src = 'data:image/png;base64,' + data.image;
+          document.getElementById('image_download').href = 'data:image/png;base64,' + data.image;
+          flip_forms(2);
         });
 
         document.getElementById('generate_form').addEventListener('submit', function(e) {
@@ -196,7 +254,7 @@
                 });
 
                 // Flip to queue form
-                flip_forms(true);
+                flip_forms(1);
             };
 
             // Read the file as a Data URL (base64)
@@ -364,7 +422,6 @@
                id="queue_form">
             <div class="mb-4">
               <label id="generation_status" class="block text-blue-300 py-2 font-bold mb-2"></label>
-              <!-- <img class="h-auto max-w-full rounded-lg opacity-25" src="/static/images/qr-placeholder.png" />-->
               <div class="flex justify-center items-center max-w-full">
                 <div class="loader opacity-50">
                   <span></span>
@@ -372,10 +429,31 @@
                   <span></span>
                   <span></span>
                 </div>
-              </div >
-              
+              </div>
             </div>
           </div>
+
+          <!-- Result form -->
+          <div class="bg-gray-900 opacity-75 w-full 
+                       shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4 hidden"
+               id="result_form">
+            <div class="mb-4">
+              <label class="block text-blue-300 py-2 font-bold mb-2">QR Code generated!</label>
+              <img id="result_image" class="h-auto max-w-full rounded-lg mb-6" />
+              <a class="bg-gradient-to-r from-purple-800 to-green-500 
+                             hover:from-pink-500 hover:to-green-500 text-white 
+                             font-bold py-2 px-4 rounded focus:ring transform mr-3
+                             transition hover:scale-105 duration-300 ease-in-out"
+                      onclick="back_to_generation()">Back</a>
+              <a class="bg-gradient-to-r from-purple-800 to-green-500 
+                             hover:from-pink-500 hover:to-green-500 text-white 
+                             font-bold py-2 px-4 rounded focus:ring transform 
+                             transition hover:scale-105 duration-300 ease-in-out"
+                  download="qr_code.png"
+                  id="image_download">Download</a>
+            </div>
+          </div>
+
         </div>
 
         <!--Right Col-->
