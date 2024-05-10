@@ -36,11 +36,11 @@ def resize_image(input_image: Image, resolution: int):
 
 class QRCodeAIGenerator:
     def __init__(self):
-        self.controlnet = ControlNetModel.from_pretrained("DionTimmer/controlnet_qrcode-control_v1p_sd15",
+        self.controlnet = ControlNetModel.from_pretrained("./models/controlnet",
                                                           torch_dtype=torch.float16)
 
         self.pipe = StableDiffusionControlNetImg2ImgPipeline.from_pretrained(
-            "runwayml/stable-diffusion-v1-5",
+            "./models/stable-diffusion",
             controlnet=self.controlnet,
             torch_dtype=torch.float16
         )

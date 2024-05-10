@@ -1,0 +1,45 @@
+version: '3.6'
+
+services:
+  server:
+    container_name: qr-ai-server
+    build: 
+      context: ./
+      dockerfile: server/Dockerfile
+    depends_on:
+     - redis
+    stdin_open: true
+    tty: true
+    restart: always
+    environment:
+     - TEST_ENV=1
+    ports:
+     - 8089:8089
+
+  worker:
+    container_name: qr-ai-worker
+    build: 
+      context: ./
+      dockerfile: worker/Dockerfile
+    depends_on:
+     - redis
+    stdin_open: true
+    tty: true
+    restart: always
+    environment:
+     - NVIDIA_VISIBLE_DEVICES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  redis:
+    container_name: qr-ai-redis
+    image: redis:7.2.4
+    restart: always
+    command: redis-server --requirepass yourpassword
+    ports:
+     - 6379:6379

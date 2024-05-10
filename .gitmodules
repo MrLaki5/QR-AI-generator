@@ -1,0 +1,7 @@
+[submodule "worker/models/controlnet"]
+	path = worker/models/controlnet
+	url = https://huggingface.co/DionTimmer/controlnet_qrcode-control_v1p_sd15
+[submodule "worker/models/stable-diffusion"]
+	path = worker/models/stable-diffusion
+	url = https://huggingface.co/runwayml/stable-diffusion-v1-5
+	branch = main

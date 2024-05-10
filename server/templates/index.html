@@ -98,18 +98,15 @@
         var result_form = document.getElementById('result_form');
 
         if (flip_queue === 0) {
-          console.log('flip to generate');
           generate_form.classList.remove('hidden');
           queue_form.classList.add('hidden');
           result_form.classList.add('hidden');
         } else if (flip_queue === 1) {
-          console.log('flip to queue');
           generate_form.classList.add('hidden');
           queue_form.classList.remove('hidden');
           result_form.classList.add('hidden');
         }
         else {
-          console.log('flip to result');
           generate_form.classList.add('hidden');
           queue_form.classList.add('hidden');
           result_form.classList.remove('hidden');

@@ -1,0 +1,5 @@
+torch
+torchvision
+torchaudio
+qrcode==7.4.2
+redis

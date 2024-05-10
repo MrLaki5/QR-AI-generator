@@ -1,6 +1,7 @@
 from threading import Thread, Lock
 from flask import current_app
 from queue_safe import QueueSafe
+from connection.redis_connector import RedisConnector
 
 
 class EmitData:
@@ -11,7 +12,7 @@ class EmitData:
 
 
 class SocketHandler(Thread):
-    def __init__(self, app, socketio, connected_sockets):
+    def __init__(self, app, socketio, redis_connector):
         super(SocketHandler, self).__init__()
         self.app_context = app.app_context()
         self.socketio = socketio
@@ -19,7 +20,7 @@ class SocketHandler(Thread):
         self.lock = Lock()
         self.is_running = True
         self.emit_queue = QueueSafe(-1)
-        self.connected_sockets = connected_sockets
+        self.redis_connector = redis_connector
 
     def stop_worker(self):
         with self.lock:
@@ -34,7 +35,7 @@ class SocketHandler(Thread):
             with self.lock:
                 if not self.is_running:
                     break
-            if self.connected_sockets.get(emit_data.socket):
+            if self.redis_connector.check_in_set(RedisConnector.CONNECTED_SOCKET_SET_NAME, emit_data.socket):
                 with self.app_context:
                     self.socketio.emit(emit_data.channel, emit_data.data, room=emit_data.socket)
             else:

@@ -1,37 +1,33 @@
 from flask import Flask, render_template, request, send_file
 from flask_socketio import SocketIO, emit
-from map_safe import MapSafe
-import base64
-from workers_pool import WorkersPool
-from socket_handler import SocketHandler
-from task import Task
 import logging
 import atexit
-from PIL import Image
-import io
+import json
+from socket_handler import SocketHandler
+from result_handler import ResultHandler
+from connection.redis_connector import RedisConnector
+from connection.structures import Task
 
 
 logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 socketio = SocketIO(app, max_http_buffer_size=5 * 1024 * 1024) # 5 MB
-connected_sockets = MapSafe()
+redis_connector = RedisConnector(host="redis", port=6379, password="yourpassword")
 
 socket_handler = SocketHandler(app=app, 
                               socketio=socketio, 
-                              connected_sockets=connected_sockets)
+                              redis_connector=redis_connector)
 socket_handler.start()
 
-workers_pool = WorkersPool(workers_count=1,
-                           queue_size=10,
-                           app=app, 
-                           connected_sockets=connected_sockets,
-                           socket_handler=socket_handler)
-workers_pool.start_workers()
+result_handler = ResultHandler(app=app,
+                               socket_handler=socket_handler,
+                               redis_connector=redis_connector)
+result_handler.start()
 
 
 def shutdown():
-    workers_pool.stop_workers()
+    result_handler.stop_worker()
     socket_handler.stop_worker()
 atexit.register(shutdown)
 
@@ -39,32 +35,27 @@ atexit.register(shutdown)
 ## WebSocket handlers
 @socketio.on('connect')
 def handle_connect():
-    status = connected_sockets.add(request.sid, True)
+    status = redis_connector.put_in_set(RedisConnector.CONNECTED_SOCKET_SET_NAME, request.sid, "1")
     if not status:
         logging.error(f"Failed to add client {request.sid} to connected sockets list.")
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    status = connected_sockets.remove(request.sid)
+    status = redis_connector.remove_from_set(RedisConnector.CONNECTED_SOCKET_SET_NAME, request.sid)
     if not status:
         logging.error(f"Failed to remove client {request.sid} from connected sockets list.")
 
 @socketio.on("generate_ws")
-def generate_ws(json):
+def generate_ws(json_data):
     client_sid = request.sid
     logging.info(f"Client {client_sid} requested to generate a QR code.")
 
-    qr_content=json['qr_content']
-    prompt=json['prompt']
-    guidance_scale=int(json['guidance_scale'])
-    controlnet_conditioning_scale=float(json['controlnet_conditioning_scale'])
-    strength=float(json['strength'])
-
-    image_data = json['init_image']
-    # Decode the image data
-    image_data = image_data.split(",")[1]  # Remove the base64 prefix
-    image_bytes = base64.b64decode(image_data)
-    image = Image.open(io.BytesIO(image_bytes))
+    qr_content=json_data['qr_content']
+    prompt=json_data['prompt']
+    guidance_scale=int(json_data['guidance_scale'])
+    controlnet_conditioning_scale=float(json_data['controlnet_conditioning_scale'])
+    strength=float(json_data['strength'])
+    image_data = json_data['init_image']
 
     task = Task(socket_id=client_sid,
                 qr_content=qr_content,
@@ -72,9 +63,11 @@ def generate_ws(json):
                 guidance_scale=guidance_scale,
                 controlnet_conditioning_scale=controlnet_conditioning_scale,
                 strength=strength,
-                init_image=image)
+                init_image=image_data)
 
-    queue_position = workers_pool.add_task(task)
+    redis_connector.put_in_set(RedisConnector.TASK_SET_DATA_NAME, client_sid, json.dumps(task.to_json()))
+    redis_connector.push_in_queue(redis_connector.TASK_QUEUE_ID_NAME, client_sid)
+    queue_position = redis_connector.get_queue_length(RedisConnector.TASK_QUEUE_ID_NAME)
 
     socket_handler.emit(client_sid, "status", {"queue_position": queue_position})
 
