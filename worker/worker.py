@@ -1,6 +1,7 @@
 import threading
 from PIL import Image
 import io
+import os
 import base64
 import json
 from qr_code_ai_generator import QRCodeAIGenerator
@@ -9,7 +10,15 @@ from connection.structures import Result
 from connection.structures import Task
 
 
-redis_connector = RedisConnector(host="redis", port=6379, password="yourpassword")
+try:
+    redis_host = os.environ['REDIS_IP']
+    redis_port = os.environ['REDIS_PORT']
+    redis_password = os.environ['REDIS_PASSWORD']
+except KeyError:
+    print("All environment variables are not set: REDIS_IP, REDIS_PORT, REDIS_PASSWORD")
+    quit(1)
+
+redis_connector = RedisConnector(host=redis_host, port=redis_port, password=redis_password)
 qr_code_gen = QRCodeAIGenerator()
 
 

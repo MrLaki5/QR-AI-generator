@@ -3,6 +3,7 @@ from flask_socketio import SocketIO, emit
 import logging
 import atexit
 import json
+import os
 from socket_handler import SocketHandler
 from result_handler import ResultHandler
 from connection.redis_connector import RedisConnector
@@ -11,9 +12,17 @@ from connection.structures import Task
 
 logging.basicConfig(level=logging.INFO)
 
+try:
+    redis_host = os.environ['REDIS_IP']
+    redis_port = os.environ['REDIS_PORT']
+    redis_password = os.environ['REDIS_PASSWORD']
+except KeyError:
+    logging.error("All environment variables are not set: REDIS_IP, REDIS_PORT, REDIS_PASSWORD")
+    quit(1)
+
 app = Flask(__name__)
 socketio = SocketIO(app, max_http_buffer_size=5 * 1024 * 1024) # 5 MB
-redis_connector = RedisConnector(host="redis", port=6379, password="yourpassword")
+redis_connector = RedisConnector(host=redis_host, port=redis_port, password=redis_password)
 
 socket_handler = SocketHandler(app=app, 
                               socketio=socketio, 

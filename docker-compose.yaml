@@ -12,7 +12,9 @@ services:
     tty: true
     restart: always
     environment:
-     - TEST_ENV=1
+     - REDIS_IP=redis
+     - REDIS_PORT=6379
+     - REDIS_PASSWORD=yourpassword
     ports:
      - 8089:8089
 
@@ -28,6 +30,9 @@ services:
     restart: always
     environment:
      - NVIDIA_VISIBLE_DEVICES=all
+     - REDIS_IP=redis
+     - REDIS_PORT=6379
+     - REDIS_PASSWORD=yourpassword
     deploy:
       resources:
         reservations:
