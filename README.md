@@ -2,13 +2,31 @@
 Transform ordinary QR codes into engaging visual experiences with AI technology.
 
 ## Overview
-Our service streamlines the process of creating visually enhanced QR codes through a user-friendly three-screen interface.
+Our application streamlines the process of creating visually enhanced QR codes through a user-friendly three-screen interface.
 <div style="display: flex; justify-content: space-between;">
   <img src="images/step1.png" style="width: 48%;"/>
   <img src="images/step2.png" style="width: 48%;"/>
 </div>
 <div style="display: flex; justify-content: space-between; margin-top: 16px;">
   <img src="images/step3.png" style="width: 96%;"/>
+</div>
+
+## Architecture
+The application consists of three primary services: a web server, Redis, and AI workers. The architecture ensures efficient handling of requests, task queuing, and scalable processing of QR code generation.
+### Web Server service
+* **Communication with Clients**: The web server interacts with clients through HTTP and WebSockets, providing the user interface and handling QR code generation requests.
+* **Task Management**: It places QR code generation requests into the Redis queue and retrieves the results from the Redis result queue.
+* **Result Delivery**: Once results are available, the web server sends them back to the clients.
+### Redis Service
+* **Task Queue**: Redis acts as a task queue, storing the QR code generation requests received from the web server.
+* **Result Queue**: Redis also stores the generated QR code results that need to be sent back to the web server.
+### AI Worker Service
+* **Task Processing**: AI workers take tasks from the Redis task queue, process the QR code generation using AI algorithms, and put the results into the Redis result queue.
+* **Scalability**: Multiple instances of the AI worker service can run simultaneously to handle a large number of requests, ensuring efficient and timely processing.
+### Diagram
+Here’s a high-level diagram to illustrate the architecture:
+<div>
+    <img src="images/qr-ai-generator-architecture.png" style="width: 80%; display: block; margin: auto;" />
 </div>
 
 ## Setup
