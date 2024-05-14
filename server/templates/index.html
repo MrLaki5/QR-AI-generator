@@ -7,6 +7,7 @@
     <title>QR-AI Generator</title>
     <meta name="description" content="" />
     <meta name="keywords" content="" />
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
     <link rel="stylesheet" href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css"/>
 
@@ -306,7 +307,7 @@
                        id="generate_form">
             <div class="mb-4">
               <!-- QR code Content -->
-              <label class="block text-blue-300 py-2 font-bold mb-2" for="qr_content">
+              <label class="block text-blue-300 py-2 font-bold" for="qr_content">
                 QR Code Content
               </label>
               <input
@@ -321,7 +322,7 @@
               />
 
               <!-- Prompt -->
-              <label class="block text-blue-300 py-2 font-bold mb-2" for="prompt">
+              <label class="block text-blue-300 py-2 font-bold mt-2" for="prompt">
                 Prompt
               </label>
               <input
@@ -336,11 +337,14 @@
               />
 
               <!-- Quidance scale -->
-              <label class="block text-blue-300 py-2 font-bold mb-2" 
+              <label class="block text-blue-300 pt-2 font-bold mt-2" 
                      for="guidance_scale"
                      id="guidance_scale_value">
                 Guidance Scale
               </label>
+              <p class="text-gray-500 text-sm mb-1">
+                Higher values increase the prominence of the prompt.
+              </p>
               <input id="guidance_scale" 
                      type="range"
                      min="5"
@@ -350,11 +354,14 @@
                             bg-white border border-gray-300 rounded-md">
 
               <!-- Controlnet conitioning scale -->
-              <label class="block text-blue-300 py-2 font-bold mb-2" 
+              <label class="block text-blue-300 pt-2 font-bold mt-2" 
                       for="controlnet_conditioning_scale"
                       id="controlnet_conditioning_scale_value">
                 Controlnet Conditioning Scale
               </label>
+              <p class="text-gray-500 text-sm mb-1">
+                Higher values result in a more prominent and clearly defined QR code.
+              </p>
               <input id="controlnet_conditioning_scale" 
                     type="range"
                     min="0.5"
@@ -365,11 +372,14 @@
                             bg-white border border-gray-300 rounded-md">
 
               <!-- Strength -->
-              <label class="block text-blue-300 py-2 font-bold mb-2" 
+              <label class="block text-blue-300 pt-2 font-bold mt-2" 
                       for="strength"
                       id="strength_value">
                 Strength
               </label>
+              <p class="text-gray-500 text-sm mb-1">
+                Lower values preserve more of the initial image's original characteristics.
+              </p>
               <input id="strength" 
                     type="range"
                     min="0.5"
@@ -380,7 +390,7 @@
                             bg-white border border-gray-300 rounded-md">
 
               <!-- Image -->
-              <label class="block text-blue-300 py-2 font-bold mb-2" 
+              <label class="block text-blue-300 py-2 font-bold mt-2" 
                       for="file_button">
                 Initial Image
               </label>
@@ -440,7 +450,7 @@
               <a class="bg-gradient-to-r from-purple-800 to-green-500 
                              hover:from-pink-500 hover:to-green-500 text-white 
                              font-bold py-2 px-4 rounded focus:ring transform mr-3
-                             transition hover:scale-105 duration-300 ease-in-out"
+                             transition hover:scale-105 duration-300 ease-in-out cursor-pointer"
                       onclick="back_to_generation()">Back</a>
               <a class="bg-gradient-to-r from-purple-800 to-green-500 
                              hover:from-pink-500 hover:to-green-500 text-white 
@@ -461,7 +471,7 @@
 
         <!--Footer-->
         <div class="w-full pt-16 pb-6 text-sm text-center md:text-left fade-in">
-          <a class="text-gray-500 no-underline hover:no-underline" href="#">&copy; App 2024</a>
+          <span class="text-gray-500 no-underline hover:no-underline">&copy; App 2024</span>
           - MrLaki5
         </div>
       </div>
