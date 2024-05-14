@@ -4,9 +4,11 @@ Transform ordinary QR codes into engaging visual experiences with AI technology.
 ## Overview
 Our service streamlines the process of creating visually enhanced QR codes through a user-friendly three-screen interface.
 <div style="display: flex; justify-content: space-between;">
-  <img src="images/step1.png" style="width: 32%;"/>
-  <img src="images/step2.png" style="width: 32%;"/>
-  <img src="images/step3.png" style="width: 32%;"/>
+  <img src="images/step1.png" style="width: 48%;"/>
+  <img src="images/step2.png" style="width: 48%;"/>
+</div>
+<div style="display: flex; justify-content: space-between; margin-top: 16px;">
+  <img src="images/step3.png" style="width: 96%;"/>
 </div>
 
 ## Setup
@@ -24,10 +26,11 @@ git submodule update --init --recursive
 ```
 docker compose up -d
 ```
-### Open starting page in browser under link [localhost:8089](localhost:8089)
+### Open starting page in browser on link below
+[localhost:8089](http://localhost:8089)
 
 ## Deployment
-The project includes a deployment file specifically designed for deployment on the [Akash Network](https://akash.network/). All the latest docker images used in deployment file can be found on links [worker](https://hub.docker.com/repository/docker/mrlaki5/qr-ai-generator-worker/general) and [server](https://hub.docker.com/repository/docker/mrlaki5/qr-ai-generator-server/general).
+The project includes a [deployment file](deploy.yaml) specifically designed for deployment on the [Akash Network](https://akash.network/). All the latest docker images used in deployment file can be found on links [worker](https://hub.docker.com/repository/docker/mrlaki5/qr-ai-generator-worker/general) and [server](https://hub.docker.com/repository/docker/mrlaki5/qr-ai-generator-server/general).
 
 ## References
 ### AI Models
