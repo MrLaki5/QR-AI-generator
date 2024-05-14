@@ -1,37 +1,42 @@
-# Sdl yaml
+---
 version: "2.0"
-
 services:
   redis:
     image: redis:7.2.4
     expose:
       - port: 6379
+        as: 6379
         to:
+          - global: false
           - service: server-app
           - service: worker-app
-    command: redis-server --requirepass yourpassword
+    command:
+      - bash
+      - "-c"
+    args:
+      - redis-server --requirepass yourpassword
   server-app:
-    image: qr-ai-server
+    image: mrlaki5/qr-ai-generator-server
     expose:
       - port: 8089
         as: 80
         to:
           - global: true
-    depends_on:
-      - redis
     env:
       - REDIS_IP=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=yourpassword
   worker-app:
-    image: qr-ai-worker
-    depends_on:
-      - redis
+    image: mrlaki5/qr-ai-generator-worker
+    expose:
+      - port: 8088
+        as: 8088
+        to:
+          - global: false
     env:
       - REDIS_IP=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=yourpassword
-
 profiles:
   compute:
     redis:
@@ -41,15 +46,15 @@ profiles:
         memory:
           size: 1Gi
         storage:
-          size: 1Gi
+          - size: 1Gi
     server-app:
       resources:
         cpu:
           units: 4
         memory:
-          size: 8Gi
-        storage:
           size: 4Gi
+        storage:
+          - size: 4Gi
     worker-app:
       resources:
         cpu:
@@ -57,36 +62,34 @@ profiles:
         memory:
           size: 32Gi
         storage:
-          size: 32Gi
+          - size: 32Gi
         gpu:
           units: 1
           attributes:
             vendor:
-              nvidia:
-                - model: rtx3070
+              nvidia: 
   placement:
-    akash:
+    dcloud:
       pricing:
         redis:
           denom: uakt
-          amount: 9999
+          amount: 1000
         server-app:
           denom: uakt
-          amount: 100000
+          amount: 1000
         worker-app:
           denom: uakt
-          amount: 100000
-
-deploy:
+          amount: 1000
+deployment:
   redis:
-    akash:
+    dcloud:
       profile: redis
       count: 1
   server-app:
-    akash:
+    dcloud:
       profile: server-app
       count: 1
   worker-app:
-    akash:
+    dcloud:
       profile: worker-app
       count: 1
