@@ -1,0 +1,92 @@
+# Sdl yaml
+version: "2.0"
+
+services:
+  redis:
+    image: redis:7.2.4
+    expose:
+      - port: 6379
+        to:
+          - service: server-app
+          - service: worker-app
+    command: redis-server --requirepass yourpassword
+  server-app:
+    image: qr-ai-server
+    expose:
+      - port: 8089
+        as: 80
+        to:
+          - global: true
+    depends_on:
+      - redis
+    env:
+      - REDIS_IP=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=yourpassword
+  worker-app:
+    image: qr-ai-worker
+    depends_on:
+      - redis
+    env:
+      - REDIS_IP=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=yourpassword
+
+profiles:
+  compute:
+    redis:
+      resources:
+        cpu:
+          units: 2
+        memory:
+          size: 1Gi
+        storage:
+          size: 1Gi
+    server-app:
+      resources:
+        cpu:
+          units: 4
+        memory:
+          size: 8Gi
+        storage:
+          size: 4Gi
+    worker-app:
+      resources:
+        cpu:
+          units: 8
+        memory:
+          size: 32Gi
+        storage:
+          size: 32Gi
+        gpu:
+          units: 1
+          attributes:
+            vendor:
+              nvidia:
+                - model: rtx3070
+  placement:
+    akash:
+      pricing:
+        redis:
+          denom: uakt
+          amount: 9999
+        server-app:
+          denom: uakt
+          amount: 100000
+        worker-app:
+          denom: uakt
+          amount: 100000
+
+deploy:
+  redis:
+    akash:
+      profile: redis
+      count: 1
+  server-app:
+    akash:
+      profile: server-app
+      count: 1
+  worker-app:
+    akash:
+      profile: worker-app
+      count: 1
