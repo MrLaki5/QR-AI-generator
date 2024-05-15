@@ -16,7 +16,7 @@ services:
     args:
       - redis-server --requirepass yourpassword
   server-app:
-    image: mrlaki5/qr-ai-generator-server
+    image: mrlaki5/qr-ai-generator-server:1.0.0
     expose:
       - port: 8089
         as: 80
@@ -27,7 +27,7 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=yourpassword
   worker-app:
-    image: mrlaki5/qr-ai-generator-worker
+    image: mrlaki5/qr-ai-generator-worker:1.0.0
     expose:
       - port: 8088
         as: 8088
